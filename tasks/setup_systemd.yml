@@ -1,0 +1,21 @@
+---
+- name: Enable systemd service
+  systemd:
+    name: clickhouse-server.service
+    enabled: yes
+
+- name: Notify handlers manually
+  meta: flush_handlers
+
+# NOTE: that since 23.1 ther is systemd notify support, so this does not make a
+# lot of sense, but let's keep it, since sometimes server may notify, but may
+# not be available by TCP.
+- name: Wait for clickhouse-server
+  wait_for:
+    # NOTE: This is tcp_port, but we can move this into vars/config.yml
+    port: 9000
+    delay: 1
+    connect_timeout: 1
+    # we have pretty tiny setup, it should start fast.
+    timeout: 30
+  when: (clickhouse_restarted is defined and clickhouse_restarted.changed) or (clickhouse_started is defined and clickhouse_started.changed)

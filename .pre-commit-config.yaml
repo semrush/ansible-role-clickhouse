@@ -1,0 +1,10 @@
+---
+repos:
+- repo: https://github.com/ansible-community/ansible-lint.git
+  # keep in sync with cytopia/ansible-lint
+  rev: v6.21.1
+  hooks:
+  - id: ansible-lint
+    args: ['--offline', '--strict']
+    # NOTE: do not restrict "files" here, since there are not only *.yml, but
+    # also *.j2 and directory names too.

@@ -1,0 +1,10 @@
+---
+- name: Collect config file stats
+  stat:
+    path: "{{ target_config_dir }}/{{ item }}"
+  register: __config_exists__
+
+- name: Assert config file exists
+  assert:
+    that: "{{ __config_exists__.stat.exists }}"
+    fail_msg: "Configuration file {{ item }} doesn't exist"

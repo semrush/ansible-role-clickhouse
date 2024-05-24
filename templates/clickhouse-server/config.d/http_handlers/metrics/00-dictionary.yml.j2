@@ -1,0 +1,66 @@
+- url: /metrics/dictionary
+  methods: POST,GET
+  handler:
+    type: predefined_query_handler
+    query: >
+        SELECT
+            metrics.1 AS name,
+            metrics.2 AS value,
+            metrics.3 AS type,
+            metrics.4 AS labels
+        FROM
+        (
+            WITH
+                [
+                    'NOT_LOADED',
+                    'LOADED',
+                    'FAILED',
+                    'LOADING',
+                    'LOADED_AND_RELOADING',
+                    'FAILED_AND_RELOADING'
+                ] AS statuses,
+                map(
+                    'database', database,
+                    'dictionary', name,
+                    'layout', type,
+                    'hostname', hostName()
+                ) AS labels,
+                [
+                    ('clickhouse_dictionary_bytes_allocated',  bytes_allocated::Float64,  'gauge',   labels),
+                    ('clickhouse_dictionary_query_count',      query_count::Float64,      'counter', labels),
+                    ('clickhouse_dictionary_hit_rate',         hit_rate::Float64,         'gauge',   labels),
+                    ('clickhouse_dictionary_found_rate',       found_rate::Float64,       'gauge',   labels),
+                    ('clickhouse_dictionary_element_count',    element_count::Float64,    'gauge',   labels),
+                    ('clickhouse_dictionary_load_factor',      load_factor::Float64,      'gauge',   labels),
+                    ('clickhouse_dictionary_loading_duration', loading_duration::Float64, 'gauge',   labels),
+                    (
+                        'clickhouse_dictionary_hierarchical_index_bytes_allocated',
+                        hierarchical_index_bytes_allocated::Float64,
+                        'gauge',
+                        labels
+                    ),
+                    (
+                        'clickhouse_dictionary_time_since_last_successful_update',
+                        (now() - last_successful_update_time)::Float64,
+                        'counter',
+                        labels
+                    )
+                ] AS dictionary_general_metrics,
+                arrayMap(
+                    _status -> (
+                        'clickhouse_dictionary_status',
+                        if(_status = status::String, 1, 0)::Float64,
+                        'gauge',
+                        mapUpdate(labels, map('status', _status))
+                    ),
+                    statuses
+                ) AS dictionary_status_metrics
+            SELECT
+                arrayJoin(concat(
+                    dictionary_general_metrics,
+                    dictionary_status_metrics
+                )) AS metrics
+            FROM system.dictionaries
+        )
+        ORDER BY name, value DESC
+        FORMAT Prometheus

@@ -1,0 +1,34 @@
+- url: /metrics/distribution_queue
+  methods: POST,GET
+  handler:
+    type: predefined_query_handler
+    query: >
+        SELECT
+            metrics.1 AS name,
+            metrics.2 AS value,
+            metrics.3 AS type,
+            metrics.4 AS labels
+        FROM
+        (
+            WITH
+                map(
+                    'database', database,
+                    'table', table
+                ) AS labels,
+                [
+                    ('clickhouse_distribution_queue_total_paths', count(), 'gauge', labels),
+                    ('clickhouse_distribution_queue_blocked_paths', sum(is_blocked), 'gauge', labels),
+                    ('clickhouse_distribution_queue_error_count', sum(error_count), 'gauge', labels),
+                    ('clickhouse_distribution_queue_data_files', sum(data_files), 'gauge', labels),
+                    ('clickhouse_distribution_queue_data_compressed_bytes', sum(data_compressed_bytes), 'gauge', labels),
+                    ('clickhouse_distribution_queue_broken_data_files', sum(broken_data_files), 'gauge', labels),
+                    ('clickhouse_distribution_queue_broken_data_compressed_bytes', sum(broken_data_compressed_bytes), 'gauge', labels)
+                ] AS distribution_queue_metrics
+            SELECT arrayJoin(distribution_queue_metrics) AS metrics
+            FROM system.distribution_queue
+            GROUP BY
+                database,
+                table
+        ) AS t
+        ORDER BY name, value DESC
+        FORMAT Prometheus

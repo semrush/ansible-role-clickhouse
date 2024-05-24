@@ -1,0 +1,22 @@
+---
+# NOTE: daemon-reload should be the first, since handlers are executed in the
+# order of they was declared in handlers file (here).
+- name: Trigger systemd daemon-reload
+  service:
+    daemon_reload: true
+  listen: daemon-reload
+
+- name: Start clickhouse-server
+  service:
+    name: clickhouse-server
+    state: started
+  listen: start-clickhouse
+  register: clickhouse_started
+
+- name: Restart clickhouse-server
+  service:
+    name: clickhouse-server
+    state: restarted
+  listen: restart-clickhouse
+  register: clickhouse_restarted
+  when: clickhouse_restart_on_changes

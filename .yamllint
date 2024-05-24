@@ -1,0 +1,23 @@
+# vi: ft=yaml
+---
+extends: default
+
+yaml-files:
+  - "*.yaml"
+  - "*.yml"
+  # NOTE: *.j2 cannot be checked since jinja sugar is not compatible with YAML.
+
+rules:
+  indentation:
+    level: warning
+    indent-sequences: consistent
+  line-length:
+    max: 250
+  braces:
+    max-spaces-inside: 1
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: true
+  comments:
+    # this is useful to distinguish commented code from comments
+    require-starting-space: false

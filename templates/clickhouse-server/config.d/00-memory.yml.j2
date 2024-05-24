@@ -1,0 +1,19 @@
+---
+# It is not practical to set this constraint to small values like just a few gigabytes,
+# because memory allocator will keep this amount of memory in caches and the server will deny service of queries.
+max_server_memory_usage: 0
+
+# On memory constrained environments you may have to set this to value larger than 1.
+max_server_memory_usage_to_ram_ratio: 0.9
+
+# Simple server-wide memory profiler. Collect a stack trace at every peak allocation step (in bytes).
+# Data will be stored in system.trace_log table with query_id = empty string.
+# Zero means disabled.
+total_memory_profiler_step: 4194304
+
+# Collect random allocations and deallocations and write them into system.trace_log with 'MemorySample' trace_type.
+# The probability is for every alloc/free regardless to the size of the allocation.
+# Note that sampling happens only when the amount of untracked memory exceeds the untracked memory limit,
+# which is 4 MiB by default but can be lowered if 'total_memory_profiler_step' is lowered.
+# You may want to set 'total_memory_profiler_step' to 1 for extra fine grained sampling.
+total_memory_tracker_sample_probability: 0

@@ -1,0 +1,25 @@
+---
+remote_servers:
+    dev_cluster:
+        - node:
+              - host: 127.1
+                port: 9000
+              - host: 127.2
+                port: 9000
+    dev_cluster_secure:
+        - secret: STORE_THIS_IN_ANSIBLE_VAULT
+          node:
+              - host: 127.1
+                port: 9000
+              - host: 127.2
+                port: 9000
+    dev_cluster_replicated:
+        secret: STORE_THIS_IN_ANSIBLE_VAULT
+        shard:
+            - replica:
+                  - internal_replication: true
+                    host: 127.1
+                    port: 9000
+                  - internal_replication: true
+                    host: 127.2
+                    port: 9000

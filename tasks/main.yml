@@ -1,0 +1,27 @@
+---
+- name: Pre configure clickhouse
+  import_tasks: pre_configure.yml
+
+# install ClickHouse from apt repository
+- name: Install clickhouse from apt repository
+  import_tasks: install_repo.yml
+  tags:
+    - clickhouse_install
+  when: clickhouse_binaries_base_url is not defined or clickhouse_binaries_base_url == None
+
+# install ClickHouse from url
+# useful when you need to install a specific version from official repository
+- name: Install clickhouse from URL
+  import_tasks: install_from_url.yml
+  tags:
+    - clickhouse_install
+  when: clickhouse_binaries_base_url and clickhouse_binaries_base_url != None
+
+- name: Set up systemd for clickhouse
+  import_tasks: setup_systemd.yml
+  when: clickhouse_setup == "full"
+
+- name: Post configure clickhouse
+  import_tasks: post_configure.yml
+  tags:
+    - clickhouse_install

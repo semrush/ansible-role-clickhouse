@@ -1,0 +1,19 @@
+---
+- name: Run query
+  command: >
+    clickhouse-client --format CustomSeparated
+                      --format_custom_field_delimiter "  "
+                      --send_logs_level warning
+                      --query "{{ item.query }}"
+  register: __query_result__
+
+- name: Assert query result
+  assert:
+    that:
+      - "__query_result__.stdout == (item.result | string)"
+      - "__query_result__.stderr == ''"
+    fail_msg: |
+      Assertion failed for query "{{ item.query }}":
+      Expected: {{ item.result }}
+      Actual: {{ __query_result__.stdout }}
+      STDERR: {{ __query_result__.stderr }}

@@ -1,0 +1,125 @@
+---
+# Clickhouse setup mode:
+# full   - setup both client and server
+# client - setup only client
+clickhouse_setup: full
+
+# NOTE: It is not recommended to use "latest", you should always pin version!
+# clickhouse_version: ""
+
+# Apt repository configuration variables
+# Apt key may be loaded either from keyserver, or directly from URL
+# In case URL is specified, it has higher priority over loading from keyserver.
+clickhouse_apt_repo: deb https://packages.clickhouse.com/deb stable main
+clickhouse_apt_repo_key: 8919F6BD2B48D754
+clickhouse_apt_keyserver: keyserver.ubuntu.com
+clickhouse_apt_repo_key_url: ""
+
+clickhouse_packages:
+  - clickhouse-server
+  - clickhouse-common-static
+  # NOTE: do not remove this package, even though it is ~1GiB uncompressed, it
+  # is very useful, since it provides better stacktraces.
+  - clickhouse-common-static-dbg
+  - clickhouse-client
+# Restart clickhouse on configuration changes
+#
+# For some big cluster setups you may not want this, and then you should set it
+# to "false", to restart clickhouse manually.
+clickhouse_restart_on_changes: true
+
+#
+# Users
+#
+
+# You should override it in inventory/group_vars/$GROUP|$HOST/users.yml
+clickhouse_users:
+  default:
+    no_password: 1
+    networks:
+      - ip:
+          - 127.0.0.0/8
+
+# You should override it in inventory/group_vars/$GROUP|$HOST/profiles.yml
+clickhouse_profiles:
+  default: {}
+
+# You should override it in inventory/group_vars/$GROUP|$HOST/quotas.yml
+clickhouse_quotas:
+  default: {}
+
+# List for additional user-configuration file to override or extend
+# variable based configuration
+clickhouse_user_files: []
+
+#
+# \Users
+#
+
+#
+# Server
+#
+
+# List of additional configuration files.
+# Supported attributes:
+# - no_log -- do not log the diff (ansible)
+# - no_restart -- assume that clickhouse-server restart is not required
+clickhouse_configuration_files: []
+
+# You can specify the URL to clickhouse binaries
+# for example from official repository
+clickhouse_binaries_base_url:
+
+clickhouse_top_level_domains_path: /var/lib/clickhouse/top_level_domains/
+# You can specify a list of files with top_level_domains
+clickhouse_top_level_domains_lists_files: []
+
+# Path to directory containing schema files for various input formats
+clickhouse_format_schema_path: /var/lib/clickhouse/format_schemas
+# List of schema file for various input formats
+clickhouse_format_schema_files: []
+
+# List of data directories which may be used in storage configuration
+clickhouse_additional_data_directories: []
+
+# This is where the coredumps will be saved
+clickhouse_systemd_working_directory: /var/lib/clickhouse
+
+# You can specify a list of files with additional HTTP handlers definitions
+clickhouse_http_handlers_files: []
+
+# Dictionaries configuration
+clickhouse_dictionaries_config_path: /etc/clickhouse-server/dictionary.d
+clickhouse_dictionaries_config_files: []
+
+#
+# \Server
+#
+
+#
+# System
+#
+
+# List of users that will be added to clickhouse group
+# (i.e. to have access to logs and database files)
+clickhouse_unix_group_users: []
+
+#
+# \System
+#
+
+#
+# Systemd unit
+#
+
+# Usually clickhouse is stable and almost never terminating abnormally.
+# And for production it should be always restarted.
+#
+# However on SIGABRT/SIGSEGV/SIGTRAP it can endlessly restarting and writing
+# core dumps so you may want to adjust RestartPreventExitStatus to include
+# signals above, but note that in this case you have to start it manually.
+clickhouse_systemd_restart_prevent_exit_status: ""
+
+#
+# \Systemd unit
+#

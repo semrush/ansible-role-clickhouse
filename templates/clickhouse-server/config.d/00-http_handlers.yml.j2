@@ -1,0 +1,16 @@
+---
+http_handlers:
+  defaults:
+  rule:
+{%  filter indent(width=4, first=True)                                       %}
+{#                                                                           #}
+{#  Including role-defined handlers                                          #}
+{%+ include 'http_handlers/metrics/00-dictionary.yml.j2'                    +%}
+{%+ include 'http_handlers/metrics/00-rocksdb.yml.j2'                       +%}
+{%+ include 'http_handlers/metrics/00-distribution_queue.yml.j2'            +%}
+{#                                                                           #}
+{#  Including user-defined handlers                                          #}
+{%  for http_handler_file in clickhouse_http_handlers_files                  %}
+{%+   include http_handler_file ~ '.j2'                                     +%}
+{%  endfor                                                                   %}
+{%  endfilter                                                                %}

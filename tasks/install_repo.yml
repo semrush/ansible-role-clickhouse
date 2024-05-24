@@ -1,0 +1,73 @@
+---
+# NOTE:
+# Packages installed from repositories, used in this role, don't auto-start
+# unit after installation (unlike Debian official repository packages),
+# and it should be started later.
+#
+# Due to this fact we don't need to check if ClickHouse service state,
+# therefore handler notifications are not required at this step.
+
+- name: ClickHouse Apt repository
+  block:
+    - name: Apt key from URL
+      get_url:
+        url: "{{ clickhouse_apt_repo_key_url }}"
+        dest: /etc/apt/trusted.gpg.d/clickhouse__ansible.asc
+        mode: "0644"
+      when: clickhouse_apt_repo_key_url is defined and clickhouse_apt_repo_key_url != ""
+    - name: Apt key from keyserver
+      apt_key:
+        id: "{{ clickhouse_apt_repo_key }}"
+        keyserver: "{{ clickhouse_apt_keyserver }}"
+      when: clickhouse_apt_repo_key_url is not defined or clickhouse_apt_repo_key_url == ""
+    - name: Apt repository
+      apt_repository:
+        filename: clickhouse__ansible
+        repo: "{{ clickhouse_apt_repo }}"
+
+- name: Update Debian Repositories
+  apt:
+    update_cache: yes
+  register: apt_get_update
+  retries: 5
+  delay: 5
+  until: apt_get_update is success
+  # make "Install ClickHouse packages" works correctly in --check mode we need
+  # to have this package in the system, otherwise it will fail when the pinned
+  # version updated.
+  check_mode: false
+  tags:
+    - molecule-idempotence-notest
+
+- name: Install ClickHouse packages
+  apt:
+    name: >
+      {{
+        clickhouse_packages |
+        reject('equalto', 'clickhouse-client') |
+        product([clickhouse_version | d('*')]) |
+        map('join', '=')
+      }}
+    force: yes
+    state: present
+  register: clickhouse_apt_packages
+  retries: 5
+  delay: 5
+  until: clickhouse_apt_packages is success
+  when: clickhouse_setup == "full"
+
+- name: Install ClickHouse client package
+  apt:
+    name: >
+      {{
+        clickhouse_packages |
+        select('equalto', 'clickhouse-client') |
+        product([clickhouse_version | d('*')]) |
+        map('join', '=')
+      }}
+    force: yes
+    state: present
+  register: clickhouse_apt_packages
+  retries: 5
+  delay: 5
+  until: clickhouse_apt_packages is success

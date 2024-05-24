@@ -1,0 +1,65 @@
+---
+clickhouse_packages:
+  - clickhouse-server
+  - clickhouse-common-static
+  - clickhouse-client
+
+clickhouse_version: "{{ lookup('env', 'CLICKHOUSE_VER') }}"
+
+clickhouse_users:
+  default:
+    no_password: 1
+    networks:
+      - ip:
+          - 127.0.0.0/8
+  readonly:
+    password: "readonlypass"
+    networks:
+      ip: "::/0"
+    profile: readonly
+    quota: readonly
+
+clickhouse_profiles:
+  default:
+    database_atomic_wait_for_drop_and_detach_synchronously: 1
+  readonly:
+    readonly: 2
+
+clickhouse_quotas:
+  readonly:
+    interval:
+      duration: 3600
+      queries: 0
+      query_selects: 0
+      query_inserts: 0
+      errors: 0
+      result_rows: 0
+      read_rows: 0
+      execution_time: 0
+
+clickhouse_user_files:
+  - users.d/01-first_test_user.yml
+  - file: users.d/02-second_test_user.yml
+    no_log: true
+
+clickhouse_configuration_files:
+  - config.d/01-merge_tree.yml
+  - file: config.d/03-server_config.yml
+  - file: config.d/04-merge_tree.yml
+    no_log: true
+  - file: config.d/02-macros.yml
+    no_log: false
+    no_restart: true
+
+clickhouse_http_handlers_files:
+  - config.d/http_handlers/test_handler.yml
+  - config.d/http_handlers/two_more_handlers.yml
+
+clickhouse_dictionaries_config_files:
+  - dictionaries.d/sample-dictionary.xml
+
+clickhouse_top_level_domains_lists_files:
+  - files/custom_tlds/custom_tld.dat
+
+clickhouse_format_schema_files:
+  - files/format_schemas/record.proto

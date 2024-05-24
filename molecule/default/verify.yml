@@ -1,0 +1,212 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  vars:
+    # SQL check for applied configuration
+    database_level_assertions:
+
+      # All configured users created
+      - query: select count() from system.users
+        result: 4
+
+      # Profile applied to user
+      - query: >
+          select user_name, inherit_profile
+          from system.settings_profile_elements
+          where user_name = 'readonly'
+        result: readonly  readonly
+
+      # Quota applied to user
+      - query: select name, apply_to_list from system.quotas where name = 'readonly'
+        result: readonly  ['readonly']
+
+      # Overriden server setting
+      - query: select value from system.server_settings where name = 'max_connections'
+        result: 3
+
+      # Configuration value from lexicographically largest override
+      - query: select value from system.merge_tree_settings where name = 'max_parts_in_total'
+        result: 5678
+
+      # "Online" configuration setting override
+      - query: select macro, substitution from system.macros
+        result: shard  1
+
+      # Dictionary is accessible
+      - query: select dictGet('sample-dictionary', 'value', 2)
+        result: bar
+
+      # Custom top level domains file is accessible
+      - query: SELECT cutToFirstSignificantSubdomainCustom('sub.sub.domain1.org', 'custom_tld')
+        result: sub.domain1.org
+
+      # No unexpected warnings
+      - query: >
+          select message from system.warnings
+          where message not like 'Linux is not using a fast clock source%'
+            and message not like 'Linux threads max count is too low%'
+            and message not like 'Linux transparent hugepages are set to \"always\"%'
+            and message not like 'Available memory at server startup is too low%'
+            and message not like 'Delay accounting is not enabled%'
+          limit 1
+        result: ""
+
+  tasks:
+    - name: Include role default variables
+      include_vars:
+        dir: ../../defaults/
+        extensions:
+          - yml
+        name: role_defaults
+
+    - name: Assert clickhouse user created
+      getent:
+        database: passwd
+        key: clickhouse
+
+    - name: Assert clickhouse group created
+      getent:
+        database: group
+        key: clickhouse
+
+    - name: Collect installed packages
+      package_facts:
+        manager: auto
+
+    - name: Assert Clickhouse Packages
+      assert:
+        that:
+          - "'{{ item }}' in ansible_facts.packages"
+      loop: "{{ clickhouse_packages }}"
+
+    - name: Collect systemd services
+      service_facts:
+
+    - name: Assert systemd unit is in running state
+      assert:
+        that:
+          - "ansible_facts.services['clickhouse-server.service'].status == 'enabled'"
+          - "ansible_facts.services['clickhouse-server.service'].state == 'running'"
+
+    - name: Collect default role override files
+      find:
+        path: ../../templates/clickhouse-server/config.d/
+        patterns: "*.yml.j2"
+      delegate_to: localhost
+      register: default_role_overrides_files
+
+    - name: Default role overrides
+      set_fact:
+        default_role_overrides: >
+          {{ default_role_overrides_files.files |
+              map(attribute='path') |
+              map('basename') |
+              map('replace', '.j2', '')
+          }}
+
+    - name: Assert role default overrides exist
+      include_tasks: ./helpers/assert_config_exists.yml
+      vars:
+        target_config_dir: /etc/clickhouse-server/config.d
+      with_items:
+        - "{{ default_role_overrides }}"
+
+    - name: Collect user-defined config override files
+      find:
+        path: templates/config.d/
+        patterns: "*.yml.j2"
+      delegate_to: localhost
+      register: user_defined_config_overrides_files
+
+    - name: User-defined config overrides
+      set_fact:
+        user_defined_config_overrides: >
+          {{ user_defined_config_overrides_files.files |
+              map(attribute='path') |
+              map('basename') |
+              map('replace', '.j2', '')
+          }}
+
+    - name: Assert user-defined configuration overrides exist
+      include_tasks: ./helpers/assert_config_exists.yml
+      vars:
+        target_config_dir: /etc/clickhouse-server/config.d
+      with_items:
+        - "{{ user_defined_config_overrides }}"
+
+    - name: Collect user-defined user override files
+      find:
+        path: templates/users.d/
+        patterns: "*.yml.j2"
+      delegate_to: localhost
+      register: user_defined_user_overrides_files
+
+    - name: User-defined user overrides
+      set_fact:
+        user_defined_user_overrides: >
+          {{ user_defined_user_overrides_files.files |
+              map(attribute='path') |
+              map('basename') |
+              map('replace', '.j2', '')
+          }}
+
+    - name: Assert user-defined configuration overrides exist
+      include_tasks: ./helpers/assert_config_exists.yml
+      vars:
+        target_config_dir: /etc/clickhouse-server/users.d
+      with_items:
+        - "{{ user_defined_user_overrides }}"
+
+    - name: Assert configuration has been applied correctly
+      include_tasks: ./helpers/assert_query_result.yml
+      with_items:
+        - "{{ database_level_assertions }}"
+
+    - name: Assert HTTP interface ping returns 200
+      uri:
+        url: http://localhost:8123/ping
+
+    - name: Assert Prometheus endpoint returns 200
+      uri:
+        url: http://localhost:9363/metrics
+
+    - name: Assert preconfigured HTTP handlers return 200
+      uri:
+        url: http://localhost:8123/{{ item }}
+      with_items:
+        - metrics/dictionary
+        - metrics/rocksdb
+        - metrics/distribution_queue
+
+    - name: Assert all user defined handlers return 200
+      uri:
+        url: http://localhost:8123/{{ item }}
+      with_items:
+        - first_test_handler
+        - second_test_handler
+        - third_test_handler
+
+    - name: Assert server format schema is accessible
+      uri:
+        url: "http://localhost:8123/?format_schema=record:Record&query=select+1+key,'foo'+value+format+Protobuf"
+
+    - name: Assert client format schema is accessible
+      command: >
+        clickhouse-client --query "select 1 key, 'foo' value format Protobuf settings format_schema='record:Record'"
+
+    - name: Assert no unexpected messages found in .err.log
+      command: >
+        grep -v \
+          -e 'Access(local_directory): File /var/lib/clickhouse/access/users.list doesn\'t exist' \
+          -e 'Access(local_directory): Recovering lists in directory /var/lib/clickhouse/access/' \
+          -e 'Available memory at server startup is too low' \
+          -e 'Delay accounting is not enabled' \
+          -e 'Integrity check of the executable skipped because the reference checksum could not be read' \
+          -e 'Linux is not using a fast clock source' \
+          -e 'Linux threads max count is too low' \
+          -e 'Linux transparent hugepages are set to "always"' \
+          /var/log/clickhouse-server/clickhouse-server.err.log
+      register: grep_result
+      failed_when: grep_result.rc != 1

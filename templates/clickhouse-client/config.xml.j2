@@ -1,0 +1,24 @@
+<!-- Config set into /etc/clickhouse-client/. It's used if no other configs are found. -->
+<config>
+    <!--
+        It's a custom prompt settings for the clickhouse-client
+        Possible macros:
+            {host}
+            {port}
+            {user}
+        Terminal colors: https://misc.flogisoft.com/bash/tip_colors_and_formatting
+        See also: https://wiki.hackzine.org/development/misc/readline-color-prompt.html
+
+        NOTE: that ClickHouse does not use readline anymore, only replxx.
+        This means that you don't need the following:
+        - RL_PROMPT_START_IGNORE (\001)
+        - RL_PROMPT_END_IGNORE   (\002)
+    -->
+    <prompt_by_server_display_name>
+        <default>\x1b[01;32m{display_name}\x1b[0m \e[1;31m:)\e[0m </default>
+    </prompt_by_server_display_name>
+
+    <format_schema_path>/etc/clickhouse-client/format_schemas</format_schema_path>
+
+    <password>{{ clickhouse_users_default|d('') }}</password>
+</config>

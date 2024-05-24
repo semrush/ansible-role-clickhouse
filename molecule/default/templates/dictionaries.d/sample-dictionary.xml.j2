@@ -1,0 +1,33 @@
+<clickhouse>
+  <dictionary>
+
+    <name>sample-dictionary</name>
+
+    <layout>
+      <flat/>
+    </layout>
+
+    <structure>
+      <id>
+        <name>id</name>
+      </id>
+      <attribute>
+        <name>value</name>
+        <type>String</type>
+        <null_value>N/A</null_value>
+      </attribute>
+    </structure>
+
+    <source>
+      <executable>
+        <command>
+          echo '1,"foo"\n2,"bar"'
+        </command>
+        <format>CSV</format>
+      </executable>
+    </source>
+
+    <lifetime>300</lifetime>
+
+  </dictionary>
+</clickhouse>

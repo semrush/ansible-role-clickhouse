@@ -1,0 +1,43 @@
+---
+# NOTE: User and query level settings are set up in "users.yml" file.
+# If you have accidentally specified user-level settings here, server won't start.
+# You can either move the settings to the right place inside "users.xml" file
+# or add skip_check_for_incorrect_settings: 1 here.
+logger:
+    # Possible levels [1]:
+    # - none (turns off logging)
+    # - fatal
+    # - critical
+    # - error
+    # - warning
+    # - notice
+    # - information
+    # - debug
+    # - trace
+    # [1]: https://github.com/pocoproject/poco/blob/poco-1.9.4-release/Foundation/include/Poco/Logger.h#L105-L114
+    level: trace
+    log: /var/log/clickhouse-server/clickhouse-server.log
+    errorlog: /var/log/clickhouse-server/clickhouse-server.err.log
+    # Rotation policy
+    # See https://github.com/pocoproject/poco/blob/poco-1.9.4-release/Foundation/include/Poco/FileChannel.h#L54-L85
+    size: 1000M
+    count: 10
+    # console: 1
+    # Default behavior is autodetection (log to console if not daemon mode and is tty)
+
+    # Per level overrides (legacy):
+    # For example to suppress logging of the ConfigReloader you can use:
+    # NOTE: levels.logger is reserved, see below.
+    # levels:
+    #     ConfigReloader: none
+
+    # Per level overrides:
+    # For example to suppress logging of the RBAC for default user you can use:
+    # (But please note that the logger name maybe changed from version to version, even after minor upgrade)
+    # levels:
+    #     - logger:
+    #         name: 'ContextAccess (default)'
+    #         level: none
+    #     - logger:
+    #         name: 'DatabaseOrdinary (test)'
+    #         level: none

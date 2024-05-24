@@ -1,0 +1,13 @@
+---
+# Default query masking rules, matching lines would be replaced with something else in the logs
+# (both text logs and system.query_log).
+# name - name for the rule (optional)
+# regexp - RE2 compatible regular expression (mandatory)
+# replace - substitution string for sensitive data (optional, by default - six asterisks)
+# query_masking_rules:
+#     rule:
+#         name: hide encrypt/decrypt arguments
+#         regexp: '((?:aes_)?(?:encrypt|decrypt)(?:_mysql)?)\s*\(\s*(?:''(?:\\''|.)+''|.*?)\s*\)'
+#         # or more secure, but also more invasive:
+#         # (aes_\w+)\s*\(.*\)
+#         replace: \1(???)

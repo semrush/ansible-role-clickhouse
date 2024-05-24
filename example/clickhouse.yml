@@ -1,0 +1,62 @@
+---
+- name: Install ClickHouse
+  hosts: all
+  gather_facts: yes
+  # In production you should use group_vars/host_vars instead
+  vars:
+    clickhouse_users:
+      default:
+        # password_sha256_hex: X
+        no_password: 1
+        networks:
+          - ip:
+              - 127.0.0.0/8
+        profile: default
+        quota: default
+        show_named_collections: 1
+        access_management: 1
+      anonymous:
+        no_password: 1
+        networks:
+          ip: "::/0"
+        profile: anonymous
+        quota: default
+        allow_databases:
+          database:
+            - datasets
+            - public
+      readonly:
+        no_password: 1
+        networks:
+          ip: "::/0"
+        profile: readonly
+        quota: default
+    clickhouse_profiles:
+      default:
+        database_atomic_wait_for_drop_and_detach_synchronously: 1
+        log_processors_profiles: 1
+      anonymous:
+        # Like in play.clickhouse.com (but slightly modified)
+        readonly: 1
+        add_http_cors_header: 1
+        max_rows_to_read: 10G
+        max_bytes_to_read: 1000Gi
+        max_execution_time: 300
+        max_memory_usage: 20Gi
+        max_network_bandwidth: 25Mi
+        max_concurrent_queries_for_user: 30
+        allow_experimental_object_type: 1
+        # By default /play adds this settings and in readonly mode it will not able
+        # to set those settings, so let's do this manually:
+        max_result_rows: 1000
+        max_result_bytes: 10000000
+        result_overflow_mode: break
+      readonly:
+        readonly: 2
+    clickhouse_configuration_files:
+      - group_templates/clickhouse/clickhouse-server/config.d/merge_tree.yml
+    clickhouse_online_configuration_files:
+      - group_templates/clickhouse/clickhouse-server/config.d/remote_servers.yml
+      - group_templates/clickhouse/clickhouse-server/config.d/zookeeper.yml
+  roles:
+    - clickhouse

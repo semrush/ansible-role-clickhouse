@@ -1,0 +1,53 @@
+---
+- name: Create directory for clickhouse binaries
+  file:
+    path: "/opt/clickhouse/"
+    state: directory
+
+- name: Download ClickHouse common package
+  get_url:
+    url: "{{ clickhouse_binaries_base_url }}/clickhouse-common-static/clickhouse-common-static_{{ clickhouse_version }}_amd64.deb"
+    dest: "/opt/clickhouse/clickhouse-common-static_{{ clickhouse_version }}_amd64.deb"
+  when: "'clickhouse-common-static' in clickhouse_packages"
+
+- name: Download ClickHouse server packages
+  get_url:
+    url: "{{ clickhouse_binaries_base_url }}/{{ item }}/{{ item }}_{{ clickhouse_version }}_amd64.deb"
+    dest: "/opt/clickhouse/{{ item }}_{{ clickhouse_version }}_amd64.deb"
+  with_items: >
+    {{
+      clickhouse_packages |
+      reject('equalto', 'clickhouse-client') |
+      reject('equalto', 'clickhouse-common-static')
+    }}
+  when: clickhouse_setup == "full"
+
+- name: Download ClickHouse client package
+  get_url:
+    url: "{{ clickhouse_binaries_base_url }}/clickhouse-client/clickhouse-client_{{ clickhouse_version }}_amd64.deb"
+    dest: "/opt/clickhouse/clickhouse-client_{{ clickhouse_version }}_amd64.deb"
+  when: "'clickhouse-client' in clickhouse_packages"
+
+- name: Install ClickHouse common package
+  apt:
+    deb: "/opt/clickhouse/clickhouse-common-static_{{ clickhouse_version }}_amd64.deb"
+    force: true
+  when: "'clickhouse-common-static' in clickhouse_packages"
+
+- name: Install ClickHouse server packages
+  apt:
+    deb: "/opt/clickhouse/{{ item }}_{{ clickhouse_version }}_amd64.deb"
+    force: true
+  with_items: >
+    {{
+      clickhouse_packages |
+      reject('equalto', 'clickhouse-client') |
+      reject('equalto', 'clickhouse-common-static')
+    }}
+  when: clickhouse_setup == "full"
+
+- name: Install ClickHouse client package
+  when: "'clickhouse-client' in clickhouse_packages"
+  apt:
+    deb: "/opt/clickhouse/clickhouse-client_{{ clickhouse_version }}_amd64.deb"
+    force: true

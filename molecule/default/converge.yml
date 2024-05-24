@@ -1,0 +1,11 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Apply clickhouse role
+      include_role:
+        name: clickhouse
+      tags:
+        - clickhouse_install

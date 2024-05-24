@@ -1,0 +1,23 @@
+- url: /metrics/rocksdb
+  methods: POST,GET
+  handler:
+    type: predefined_query_handler
+    query: >
+        SELECT
+            metric_name   AS name,
+            metric_value  AS value,
+            metric_type   AS type,
+            metric_labels AS labels
+        FROM
+        (
+            SELECT
+                concat('clickhouse_rocksdb', '_', replace(name, '.', '_')) AS metric_name,
+                CAST(value, 'Float64') AS metric_value,
+                'counter' AS metric_type,
+                map('database', database, 'table', table, 'hostname', hostName()) AS metric_labels
+            FROM system.rocksdb
+        )
+        ORDER BY
+            name,
+            value DESC
+        FORMAT Prometheus

@@ -1,0 +1,34 @@
+---
+- name: Remove server dist configuration files
+  when: clickhouse_setup == "full"
+  block:
+    - name: Find clickhouse-server config files
+      file:
+        dest: "{{ item }}"
+        state: absent
+      loop:
+        - "/etc/clickhouse-server/config.xml"
+        - "/etc/clickhouse-server/users.xml"
+    - name: Delete .xml file from config.d
+      find:
+        paths: /etc/clickhouse-server/config.d
+        patterns: "*.xml"
+      register: files_to_delete
+    - name: Check that files were deleted
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ files_to_delete.files }}"
+
+- name: Add user to clickhouse group
+  user:
+    name: "{{ item }}"
+    groups: clickhouse
+    append: yes
+  with_items: "{{ clickhouse_unix_group_users }}"
+  when: clickhouse_setup == "full"
+
+- name: Remove client dist configuration file
+  file:
+    dest: /etc/clickhouse-client/config.xml.dpkg-dist
+    state: absent

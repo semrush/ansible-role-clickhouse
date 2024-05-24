@@ -1,0 +1,54 @@
+---
+# Sending data to Graphite for monitoring. Several sections can be defined.
+# interval - send every X second
+# root_path - prefix for keys
+# hostname_in_path - append hostname to root_path (default = true)
+# metrics - send data from table system.metrics
+# events - send data from table system.events
+# asynchronous_metrics - send data from table system.asynchronous_metrics
+
+# graphite:
+#     host: localhost
+#     port: 42000
+#     timeout: 0.1
+#     interval: 60
+#     root_path: one_min
+#     hostname_in_path: true
+
+#     metrics: true
+#     events: true
+#     events_cumulative: false
+#     asynchronous_metrics: true
+
+# graphite:
+#     host: localhost
+#     port: 42000
+#     timeout: 0.1
+#     interval: 1
+#     root_path: one_sec
+
+#     metrics: true
+#     events: true
+#     events_cumulative: false
+#     asynchronous_metrics: false
+
+
+# Example of parameters for GraphiteMergeTree table engine
+# graphite_rollup_example:
+#     pattern:
+#         regexp: click_cost
+#         function: any
+#         retention:
+#             - age: 0
+#               precision: 3600
+#             - age: 86400
+#               precision: 60
+#     default:
+#         function: max
+#         retention:
+#             - age: 0
+#               precision: 60
+#             - age: 3600
+#               precision: 300
+#             - age: 86400
+#               precision: 3600

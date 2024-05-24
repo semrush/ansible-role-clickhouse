@@ -1,0 +1,79 @@
+---
+# Query log. Used only for queries with setting log_queries = 1.
+query_log:
+    # database: system
+    # table: query_log
+    # flush_interval_milliseconds: 7500
+    partition_by: toYYYYMM(event_date)
+    ttl: event_date + toIntervalDay(90)
+    settings: ttl_only_drop_parts=1
+
+# Trace log. Stores stack traces collected by query profilers.
+# See query_profiler_real_time_period_ns and query_profiler_cpu_time_period_ns settings.
+trace_log:
+    partition_by: toYYYYMM(event_date)
+    ttl: event_date + toIntervalDay(90)
+    settings: ttl_only_drop_parts=1
+
+# Query views log. Has information about all dependent views associated with a query.
+# Used only for queries with setting log_query_views = 1.
+query_views_log:
+    partition_by: toYYYYMM(event_date)
+    ttl: event_date + toIntervalDay(180)
+    settings: ttl_only_drop_parts=1
+
+# Part log contains information about all actions with parts in MergeTree tables (creation, deletion, merges, downloads).
+part_log:
+    partition_by: toYYYYMM(event_date)
+    ttl: event_date + toIntervalDay(360)
+    settings: ttl_only_drop_parts=1
+
+# Uncomment to write text log into table.
+# Text log contains all information from usual server log but stores it in structured and efficient way.
+# The level of the messages that goes to the table can be limited (<level>), if not specified all messages will go to the table.
+text_log:
+    # level: ''
+    partition_by: toYYYYMM(event_date)
+    ttl: event_date + toIntervalDay(90)
+    settings: ttl_only_drop_parts=1
+
+# OpenTelemetry log contains OpenTelemetry trace spans.
+opentelemetry_span_log:
+    order_by: finish_date, finish_time_us, trace_id
+    partition_by: toYYYYMM(finish_date)
+    ttl: finish_date + toIntervalDay(180)
+    settings: ttl_only_drop_parts=1
+
+# Persistent backups information -- useful and small.
+backup_log: {}
+
+# Proviling on processors level.
+processors_profile_log:
+    partition_by: toYYYYMM(event_date)
+    ttl: event_date + toIntervalDay(180)
+    settings: ttl_only_drop_parts=1
+
+# Query thread log. Has information about all threads participated in query execution.
+# Used only for queries with setting log_query_threads = 1.
+# query_thread_log: {}
+
+# Metric log contains rows with current values of ProfileEvents, CurrentMetrics collected with "collect_interval_milliseconds" interval.
+# metric_log:
+#     database: system
+#     table: metric_log
+#     flush_interval_milliseconds: 7500
+#     collect_interval_milliseconds: 1000
+
+# Asynchronous metric log contains values of metrics from
+# system.asynchronous_metrics.
+# asynchronous_metric_log: {}
+
+# Crash log. Stores stack traces for fatal errors.
+# This table is normally empty.
+crash_log: {}
+
+# Log every request to ZooKeeper.
+# zookeeper_log: {}
+
+# Log logins.
+# session_log: {}

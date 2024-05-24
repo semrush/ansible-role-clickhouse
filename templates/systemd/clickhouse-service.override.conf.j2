@@ -1,0 +1,20 @@
+[Service]
+PermissionsStartOnly=true
+# Sometimes default limit is too low (<10K), while clickhouse default thread
+# pool size is 10K (+ threads for connections that uses threads not from this
+# limit), so it is better to increase this value to avoid cannot allocate thread
+# errors (even though under normal circumstances you should not have >5K
+# threads).
+TasksMax=16384
+Restart=always
+RestartPreventExitStatus={{ clickhouse_systemd_restart_prevent_exit_status }}
+TimeoutStopSec=infinity
+# We disable builtin watchdog (which monitors the clickhouse-server) since we
+# do monitor systemd unit's statuses.
+Environment=CLICKHOUSE_WATCHDOG_ENABLE=0 GWP_ASAN_OPTIONS="Enabled=false"
+# We need to override ExecStart since we use configurations in YAML format
+# (default is XML)
+ExecStart=
+ExecStart=/usr/bin/clickhouse-server --config=/etc/clickhouse-server/config.yml --pid-file=/run/clickhouse-server/clickhouse-server.pid
+# This is where the coredumps will be saved
+WorkingDirectory={{ clickhouse_systemd_working_directory }}

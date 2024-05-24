@@ -1,0 +1,272 @@
+---
+# Here we create user/group first, because first we need to configure
+# everything for clickhouse and only that it will be installed and started.
+# This is required to run clickhouse only after applied configuration by
+# ansible, not before (since in this case it could be run with default
+# password, even though it is empty, or the data directory can be missing,
+# though this is also unlikely).
+# And during configure we need to change owner/group to clickhouse, so we have
+# to create user/group preliminary.
+- name: Add user/group
+  when: clickhouse_setup == "full"
+  block:
+    - name: Add group
+      group:
+        name: clickhouse
+        system: true
+    - name: Add user
+      user:
+        name: clickhouse
+        system: true
+        group: clickhouse
+        create_home: false
+        home: /nonexistent
+        shell: /bin/false
+
+# Prepare the override before install to start with .yml config
+- name: Configure systemd overrides
+  when: clickhouse_setup == "full"
+  block:
+    - name: Create systemd overrides directory
+      file:
+        dest: /etc/systemd/system/clickhouse-server.service.d
+        state: directory
+        owner: root
+        group: root
+    - name: Create systemd working directory
+      file:
+        dest: "{{ clickhouse_systemd_working_directory }}"
+        state: directory
+        owner: clickhouse
+        group: clickhouse
+    - name: Deploy config files
+      template:
+        src: systemd/clickhouse-service.override.conf.j2
+        dest: /etc/systemd/system/clickhouse-server.service.d/override.conf
+        owner: root
+        group: root
+      notify:
+        - daemon-reload
+        - restart-clickhouse
+
+# Configuration root and extensions (config.d, users.d and dictionaries.d)
+# directories and their contents ownership and permissions are aligned with
+# ClickHouse installer:
+# https://github.com/ClickHouse/ClickHouse/blob/master/programs/install/Install.cpp
+- name: Configure clickhouse server
+  when: clickhouse_setup == "full"
+  block:
+    # Avoid overlaps of the user specified configurations with role builtin
+    # TODO: add a test
+    - name: Verify clickhouse_online_configuration_files/clickhouse_configuration_files does not have 00- prefix
+      assert:
+        that: >
+          (
+            ((item is mapping) and not item.file | basename | regex_search("^00-")) or
+            ((item is not mapping) and not item | basename | regex_search("^00-"))
+          )
+        msg: "Configuration file {{ item }} contains '00-' prefix. Those are reserved for role builtin"
+      loop: "{{ clickhouse_online_configuration_files | default([]) + clickhouse_configuration_files }}"
+    - name: Create clickhouse-server root configuration directory
+      file:
+        dest: /etc/clickhouse-server
+        state: directory
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=rwx,go="
+    - name: Create clickhouse-server configuration extensions directories
+      file:
+        dest: "{{ item }}"
+        state: directory
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=rx,go="
+      loop:
+        - /etc/clickhouse-server/config.d
+        - /etc/clickhouse-server/users.d
+        - "{{ clickhouse_dictionaries_config_path }}"
+    - name: Deploy main clickhouse-server configuration files (requires restart)
+      template:
+        src: "{{ item }}.j2"
+        dest: "/etc/{{ item | dirname }}/{{ item | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      notify: restart-clickhouse
+      loop:
+        - clickhouse-server/config.yml
+        # NOTE: when changing default user the server likely need to be
+        # restarted, hence, it is here.
+        - clickhouse-server/users.yml
+    - name: Install no_restart attribute for clickhouse_online_configuration_files
+      no_log: true
+      set_fact:
+        _config_no_restart: "{{ _config_no_restart | default([]) + [{'file': item, 'no_restart': True}] }}"
+      loop: "{{ clickhouse_online_configuration_files | default([]) }}"
+    - name: Install attributes for the configuration files
+      no_log: true
+      vars:
+        common:
+          # NOTE: role has "00-" prefix to give this override lowest priority
+          - clickhouse-server/config.d/00-logger.yml
+          - clickhouse-server/config.d/00-system_log.yml
+          - clickhouse-server/config.d/00-access_control_improvements.yml
+          - clickhouse-server/config.d/00-compression.yml
+          - clickhouse-server/config.d/00-distributed_ddl.yml
+          - clickhouse-server/config.d/00-graphite.yml
+          - clickhouse-server/config.d/00-kerberos.yml
+          - clickhouse-server/config.d/00-ldap.yml
+          - clickhouse-server/config.d/00-query_masking_rules.yml
+          - clickhouse-server/config.d/00-send_crash_reports.yml
+          - clickhouse-server/config.d/00-users_repository.yml
+          - clickhouse-server/config.d/00-jdbc.yml
+          - clickhouse-server/config.d/00-backups.yml
+          - clickhouse-server/config.d/00-top_level_domains.yml
+          - file: clickhouse-server/config.d/00-http_handlers.yml
+            no_restart: true
+          - file: clickhouse-server/config.d/00-prometheus.yml
+            no_restart: true
+          - file: clickhouse-server/config.d/00-protocols.yml
+            no_restart: true
+          - file: clickhouse-server/config.d/00-memory.yml
+            no_restart: true
+      set_fact:
+        _configs: "{{ _configs | default([]) + ((item is mapping) | ternary(
+          [{'file': item.file, 'no_log': item.no_log | default(False), 'no_restart': item.no_restart | default(False)}],
+          [{'file': item, 'no_log': False, 'no_restart': False}]
+        )) }}"  # noqa: jinja[spacing]
+      loop: "{{ common + clickhouse_configuration_files + _config_no_restart | default([]) }}"
+    - name: Deploy clickhouse-server config overrides (requires restart)
+      template:
+        src: "{{ item.file }}.j2"
+        dest: "/etc/clickhouse-server/config.d/{{ item.file | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      notify: restart-clickhouse
+      no_log: "{{ item.no_log }}"
+      loop: "{{ _configs | selectattr('no_restart', 'eq', False) }}"
+    - name: Deploy clickhouse-server config overrides (without restart)
+      template:
+        src: "{{ item.file }}.j2"
+        dest: "/etc/clickhouse-server/config.d/{{ item.file | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      no_log: "{{ item.no_log }}"
+      loop: "{{ _configs | selectattr('no_restart', 'eq', True) }}"
+    - name: Deploy role default clickhouse-server users overrides (requires restart)
+      template:
+        src: "{{ item }}.j2"
+        dest: "/etc/clickhouse-server/users.d/{{ item | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      notify: restart-clickhouse
+      loop:
+        - clickhouse-server/users.d/00-overrides.yml
+    - name: Deploy user provided clickhouse-server users overrides (requires restart)
+      template:
+        src: "{{ (item is mapping) | ternary(item.file, item) }}.j2"
+        dest: "/etc/clickhouse-server/users.d/{{ (item is mapping) | ternary(item.file, item) | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      notify: restart-clickhouse
+      no_log: "{{ (item is mapping) | ternary(item.no_log, False) }}"
+      loop: "{{ clickhouse_user_files }}"
+    - name: Deploy dictionaries configuration (requires restart)
+      template:
+        src: "{{ item }}.j2"
+        dest: "{{ clickhouse_dictionaries_config_path }}/{{ item | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      loop: "{{ clickhouse_dictionaries_config_files }}"
+      notify: restart-clickhouse
+
+# format_schemas and top_level_domains by default are created by server process
+# according to `umask` server configuration parameter.
+# The role follows default ClickHouse umask value and gives full permissions to
+# owner user, and rx to group
+- name: Provide user files (top level domains, format schemas, etc.)
+  when: clickhouse_setup == "full"
+  block:
+    - name: Create clickhouse-server directories for custom TLD and format schema files
+      file:
+        dest: "{{ item }}"
+        state: directory
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=rwx,g=rx,o="
+      loop:
+        - "{{ clickhouse_top_level_domains_path }}"
+        - "{{ clickhouse_format_schema_path }}"
+    - name: Deploy top_level_domains_lists .dot files (requires restart)
+      template:
+        src: "{{ item }}"
+        dest: "{{ clickhouse_top_level_domains_path }}/{{ item | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=rwx,g=rx,o="
+      notify: restart-clickhouse
+      loop: "{{ clickhouse_top_level_domains_lists_files }}"
+    # TODO: when MSV will become 23.10, replace restart with
+    # `SYSTEM DROP FORMAT SCHEMA CACHE` handler
+    - name: Deploy format_schema files (requires restart)
+      copy:
+        src: "{{ item }}"
+        dest: "{{ clickhouse_format_schema_path }}/{{ item | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=rwx,g=rx,o="
+      notify: restart-clickhouse
+      loop: "{{ clickhouse_format_schema_files }}"
+
+- name: Create clickhouse-server additional data directories
+  file:
+    dest: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+    state: directory
+    owner: clickhouse
+    group: clickhouse
+  with_items:
+    "{{ clickhouse_additional_data_directories }}"
+  when: clickhouse_setup == "full"
+
+# Client configuration directory and files are unpacked from .deb
+# and created with default umask.
+- name: Configure clickhouse client
+  block:
+    - name: Create clickhouse-client configuration directories
+      file:
+        dest: /etc/clickhouse-client
+        state: directory
+        owner: root
+        group: root
+    # format_schema_path permissions in general are different from
+    # clickhouse_client ones, so we additionally deploy schema-files
+    # to client directory, and set it as client format_schema_path
+    # configuration property
+    - name: Create format schemas directory for clickhouse-client
+      file:
+        dest: /etc/clickhouse-client/format_schemas
+        state: directory
+        owner: root
+        group: root
+    - name: Deploy format_schema files for clickhouse-client
+      copy:
+        src: "{{ item }}"
+        dest: "/etc/clickhouse-client/format_schemas/{{ item | basename }}"
+        owner: root
+        group: root
+      notify: restart-clickhouse
+      loop: "{{ clickhouse_format_schema_files }}"
+    - name: Deploy clickhouse-client configuration files
+      template:
+        src: "{{ item }}.j2"
+        dest: "/etc/{{ item }}"
+        owner: root
+        group: root
+      loop:
+        - clickhouse-client/config.xml

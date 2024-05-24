@@ -1,0 +1,5 @@
+---
+roles:
+- name: clickhouse
+  scm: git
+  src: git@github.com:semrush/ansible-role-clickhouse.git

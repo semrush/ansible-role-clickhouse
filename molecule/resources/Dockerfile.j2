@@ -1,0 +1,18 @@
+# Example & reference:
+# https://github.com/ansible-community/molecule-plugins/blob/main/src/molecule_plugins/docker/playbooks/Dockerfile.j2
+
+FROM {{ item.image }}
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y \
+        python3 \
+        ca-certificates \
+        systemd \
+        gnupg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*;
+
+VOLUME ["/sys/fs/cgroup"]
+
+ENTRYPOINT ["/lib/systemd/systemd"]
