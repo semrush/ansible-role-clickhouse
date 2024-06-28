@@ -23,7 +23,7 @@ roles:
 - name: clickhouse
   scm: git
   src: git@github.com:semrush/ansible-role-clickhouse.git
-  version: x
+  # version: <tag or commit SHA>
 ```
 
 If you want for role auto update, then you can add this role to `.gitignore` (or install it outside of the repository):
