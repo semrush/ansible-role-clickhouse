@@ -26,7 +26,11 @@ roles:
   # version: <tag or commit SHA>
 ```
 
-If you want for role auto update, then you can add this role to `.gitignore` (or install it outside of the repository):
+It is also recommended to add role to `.gitignore` (or install it outside of
+the repository), this will allow to keep things clean, i.e. you will not
+randomly edit the roles file and later `ansible-galaxy` may overwrite them
+(though there is one exception to this rule -
+[`ansible-pull`](https://github.com/ansible/ansible/issues/76535#issuecomment-1300762202)):
 
 ```
 # .gitignore
