@@ -1,3 +1,6 @@
 ---
 # [min, basic, moderate, safety, shared, production]
 profile: basic
+
+mock_roles:
+  - clickhouse
