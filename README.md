@@ -2,7 +2,8 @@
 
 ### Prerequisites
 
-ClickHouse v23.5 (*note: yes, it could be relaxed, but I just don't think that it worth it*)
+- ClickHouse v23.5 (*note: yes, it could be relaxed, but I just don't think that it worth it*)
+- Ansible 2.11+
 
 #### Version requirement changelog
 
