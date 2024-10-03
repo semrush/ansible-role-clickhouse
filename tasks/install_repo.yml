@@ -8,6 +8,7 @@
 # therefore handler notifications are not required at this step.
 
 - name: ClickHouse Apt repository
+  check_mode: false
   block:
     - name: Apt key from URL
       get_url:
