@@ -1,0 +1,9 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ensure python3-apt is installed (required for testing ansible --check)
+      apt:
+        name: python3-apt
+        state: present
