@@ -40,3 +40,20 @@ DISTRO_NAME=debian DISTRO_VER=12 CLICKHOUSE_VER=23.10.6.60 molecule test
 # Use ANSIBLE_VERBOSITY to increase ansible output verbosity
 ANSIBLE_VERBOSITY=3 molecule test
 ```
+
+#### Note about `gcloud` helper for `docker`
+
+If you are using `gcloud` helper, then you may need to fix `$CLOUDSDK_PYTHON`:
+
+```
+$ echo $CLOUDSDK_PYTHON
+/usr/bin/python
+export CLOUDSDK_PYTHON=python
+```
+
+Otherwise system-wide python interpreter may not work:
+
+```
+$ echo "gcr.io" | /opt/google-cloud-cli/bin/docker-credential-gcloud get
+ERROR: gcloud crashed (AttributeError): module 'google._upb._message' has no attribute 'MessageMapContainer'
+```
