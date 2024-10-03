@@ -24,7 +24,7 @@ roles:
 - name: clickhouse
   scm: git
   src: git@github.com:semrush/ansible-role-clickhouse.git
-  # version: <tag or commit SHA>
+  version: 1.0.0
 ```
 
 It is also recommended to add role to `.gitignore` (or install it outside of
