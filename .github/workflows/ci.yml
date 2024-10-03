@@ -50,6 +50,9 @@ jobs:
             version: "22.04"
           - name: ubuntu
             version: "24.04"
+          - name: ubuntu
+            version: "24.04"
+            setup: client
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,4 +70,8 @@ jobs:
         run: pip install -r requirements-test.txt
 
       - name: Molecule
-        run: DISTRO_NAME=${{ matrix.distro.name }} DISTRO_VER=${{ matrix.distro.version }} molecule test
+        run:
+          DISTRO_NAME=${{ matrix.distro.name }}
+          DISTRO_VER=${{ matrix.distro.version }}
+          CLICKHOUSE_SETUP=${{ matrix.distro.setup }}
+          molecule test

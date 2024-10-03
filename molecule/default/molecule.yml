@@ -30,6 +30,7 @@ provisioner:
   name: ansible
   env:
     CLICKHOUSE_VER: ${CLICKHOUSE_VER:-'*'}
+    CLICKHOUSE_SETUP: ${CLICKHOUSE_SETUP:-'full'}
   inventory:
     links:
       group_vars: ./inventory/group_vars/

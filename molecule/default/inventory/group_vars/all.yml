@@ -5,6 +5,7 @@ clickhouse_packages:
   - clickhouse-client
 
 clickhouse_version: "{{ lookup('env', 'CLICKHOUSE_VER') }}"
+clickhouse_setup: "{{ lookup('env', 'CLICKHOUSE_SETUP') }}"
 
 clickhouse_users:
   default:

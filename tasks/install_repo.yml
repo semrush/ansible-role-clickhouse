@@ -44,7 +44,6 @@
     name: >
       {{
         clickhouse_packages |
-        reject('equalto', 'clickhouse-client') |
         product([clickhouse_version | d('*')]) |
         map('join', '=')
       }}
@@ -61,7 +60,7 @@
     name: >
       {{
         clickhouse_packages |
-        select('equalto', 'clickhouse-client') |
+        select('in', ['clickhouse-client', 'clickhouse-common-static']) |
         product([clickhouse_version | d('*')]) |
         map('join', '=')
       }}
@@ -71,3 +70,4 @@
   retries: 5
   delay: 5
   until: clickhouse_apt_packages is success
+  when: clickhouse_setup == "client"

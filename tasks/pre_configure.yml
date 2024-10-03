@@ -260,7 +260,6 @@
         dest: "/etc/clickhouse-client/format_schemas/{{ item | basename }}"
         owner: root
         group: root
-      notify: restart-clickhouse
       loop: "{{ clickhouse_format_schema_files }}"
     - name: Deploy clickhouse-client configuration files
       template:
