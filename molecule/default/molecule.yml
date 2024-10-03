@@ -5,8 +5,8 @@ driver:
   name: docker
 
 platforms:
-  - name: "clickhouse-${DISTRO_NAME:-debian}-${DISTRO_VER:-10}-${CLICKHOUSE_VER:-latest}-${CI_JOB_ID:-0}"
-    image: "${DISTRO_NAME:-debian}:${DISTRO_VER:-10}"
+  - name: "clickhouse-${DISTRO_NAME:-debian}-${DISTRO_VER:-12}-${CLICKHOUSE_VER:-latest}-${CI_JOB_ID:-0}"
+    image: "${DISTRO_NAME:-debian}:${DISTRO_VER:-12}"
     dockerfile: ../resources/Dockerfile.j2
     cgroupns_mode: host
     sysctls:
