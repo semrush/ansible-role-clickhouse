@@ -48,7 +48,8 @@ If you are using `gcloud` helper, then you may need to fix `$CLOUDSDK_PYTHON`:
 ```
 $ echo $CLOUDSDK_PYTHON
 /usr/bin/python
-export CLOUDSDK_PYTHON=python
+# If you have absolute path, like above, then you need to replace it with relative:
+$ export CLOUDSDK_PYTHON=python
 ```
 
 Otherwise system-wide python interpreter may not work:
