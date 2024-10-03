@@ -53,6 +53,9 @@ jobs:
           - name: ubuntu
             version: "24.04"
             setup: client
+          - name: ubuntu
+            version: "24.04"
+            clickhouse_version: "24.9.2.42"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,4 +77,5 @@ jobs:
           DISTRO_NAME=${{ matrix.distro.name }}
           DISTRO_VER=${{ matrix.distro.version }}
           CLICKHOUSE_SETUP=${{ matrix.distro.setup }}
+          CLICKHOUSE_VER=${{ matrix.distro.clickhouse_version }}
           molecule test
