@@ -34,3 +34,20 @@ provisioner:
   inventory:
     links:
       group_vars: ./inventory/group_vars/
+
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    # cover ansible --check as well
+    - check
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - cleanup
+    - destroy
