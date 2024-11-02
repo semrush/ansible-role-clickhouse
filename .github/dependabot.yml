@@ -9,3 +9,6 @@ updates:
     python-packages:
       patterns:
       - "*"
+  ignore:
+  # ansible-core depends on resolvelib<1.1.0 and >=0.5.3
+  - dependency-name: "resolvelib"
