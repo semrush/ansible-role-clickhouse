@@ -6,6 +6,6 @@
   tasks:
     - name: Apply clickhouse role
       include_role:
-        name: clickhouse
+        name: semrush.clickhouse
       tags:
         - clickhouse_install
