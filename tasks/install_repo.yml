@@ -32,12 +32,6 @@
   retries: 5
   delay: 5
   until: apt_get_update is success
-  # make "Install ClickHouse packages" works correctly in --check mode we need
-  # to have this package in the system, otherwise it will fail when the pinned
-  # version updated.
-  check_mode: false
-  tags:
-    - molecule-idempotence-notest
 
 - name: Install ClickHouse packages
   apt:
@@ -54,6 +48,14 @@
   delay: 5
   until: clickhouse_apt_packages is success
   when: clickhouse_setup == "full"
+  # Ignore not found package errors in check mode
+  failed_when: |
+    clickhouse_apt_packages.failed and
+    (
+      not ansible_check_mode or
+      clickhouse_apt_packages.msg | regex_search("^(no package(\(s\))? matching|no available installation candidate)", ignorecase=True) == None
+    )
+  changed_when: clickhouse_apt_packages.changed or clickhouse_apt_packages.failed
 
 - name: Install ClickHouse client package
   apt:
@@ -71,3 +73,5 @@
   delay: 5
   until: clickhouse_apt_packages is success
   when: clickhouse_setup == "client"
+  failed_when: clickhouse_apt_packages.failed and (not ansible_check_mode or not clickhouse_apt_packages.msg.startswith('No package matching'))
+  changed_when: clickhouse_apt_packages.changed or clickhouse_apt_packages.failed

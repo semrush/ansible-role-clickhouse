@@ -20,3 +20,6 @@
   listen: restart-clickhouse
   register: clickhouse_restarted
   when: clickhouse_restart_on_changes
+  # Ignore non-existing service error in check mode
+  failed_when: clickhouse_restarted.failed and (not ansible_check_mode or not clickhouse_restarted.msg.startswith("Could not find the requested service"))
+  changed_when: clickhouse_restarted.changed or clickhouse_restarted.failed
