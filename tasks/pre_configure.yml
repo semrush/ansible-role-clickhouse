@@ -106,7 +106,7 @@
     - name: Install attributes for the configuration files
       no_log: true
       vars:
-        common:
+        common_server_configs:
           # NOTE: role has "00-" prefix to give this override lowest priority
           - clickhouse-server/config.d/00-logger.yml
           - clickhouse-server/config.d/00-system_log.yml
@@ -131,11 +131,11 @@
           - file: clickhouse-server/config.d/00-memory.yml
             no_restart: true
       set_fact:
-        _configs: "{{ _configs | default([]) + ((item is mapping) | ternary(
+        _server_configs: "{{ _server_configs | default([]) + ((item is mapping) | ternary(
           [{'file': item.file, 'no_log': item.no_log | default(False), 'no_restart': item.no_restart | default(False)}],
           [{'file': item, 'no_log': False, 'no_restart': False}]
         )) }}"  # noqa: jinja[spacing]
-      loop: "{{ common + clickhouse_configuration_files + _config_no_restart | default([]) }}"
+      loop: "{{ common_server_configs + clickhouse_configuration_files + _config_no_restart | default([]) }}"
     - name: Deploy clickhouse-server config overrides (requires restart)
       template:
         src: "{{ item.file }}.j2"
@@ -145,7 +145,7 @@
         mode: "u=r,go="
       notify: restart-clickhouse
       no_log: "{{ item.no_log }}"
-      loop: "{{ _configs | selectattr('no_restart', 'eq', False) }}"
+      loop: "{{ _server_configs | selectattr('no_restart', 'eq', False) }}"
     - name: Deploy clickhouse-server config overrides (without restart)
       template:
         src: "{{ item.file }}.j2"
@@ -154,18 +154,21 @@
         group: clickhouse
         mode: "u=r,go="
       no_log: "{{ item.no_log }}"
-      loop: "{{ _configs | selectattr('no_restart', 'eq', True) }}"
-    - name: Deploy role default clickhouse-server users overrides (requires restart)
-      template:
-        src: "{{ item }}.j2"
-        dest: "/etc/clickhouse-server/users.d/{{ item | basename }}"
-        owner: clickhouse
-        group: clickhouse
-        mode: "u=r,go="
-      notify: restart-clickhouse
-      loop:
-        - clickhouse-server/users.d/00-overrides.yml
-    - name: Deploy user provided clickhouse-server users overrides (requires restart)
+      loop: "{{ _server_configs | selectattr('no_restart', 'eq', True) }}"
+    - name: Set attributes for user configuration files
+      no_log: true
+      vars:
+        common_user_configs:
+          - clickhouse-server/users.d/00-overrides.yml
+      set_fact:
+        _user_configs: "{{
+          _user_configs | default([]) + ((item is mapping) | ternary(
+            [{'file': item.file, 'no_log': item.no_log | default(False)}],
+            [{'file': item, 'no_log': False}]
+          ))
+        }}"  # noqa: jinja[spacing]
+      loop: "{{ common_user_configs + clickhouse_user_files | default([]) }}"
+    - name: Deploy clickhouse-server users overrides (requires restart)
       template:
         src: "{{ (item is mapping) | ternary(item.file, item) }}.j2"
         dest: "/etc/clickhouse-server/users.d/{{ (item is mapping) | ternary(item.file, item) | basename }}"
@@ -173,8 +176,8 @@
         group: clickhouse
         mode: "u=r,go="
       notify: restart-clickhouse
-      no_log: "{{ (item is mapping) | ternary(item.no_log, False) }}"
-      loop: "{{ clickhouse_user_files }}"
+      no_log: "{{ item.no_log }}"
+      loop: "{{ _user_configs }}"
     - name: Deploy dictionaries configuration (requires restart)
       template:
         src: "{{ item }}.j2"
@@ -184,6 +187,23 @@
         mode: "u=r,go="
       loop: "{{ clickhouse_dictionaries_config_files }}"
       notify: restart-clickhouse
+
+- name: Cleanup stale server configuration files
+  when: clickhouse_setup == "full"
+  include_tasks: ./helpers/cleanup_stale_files.yml
+  with_items:
+    - cleanup_directory: /etc/clickhouse-server/config.d
+      expected_files: "{{ _server_configs | map(attribute='file') | map('basename') }}"
+      pattern: "*.yml"
+      restart: true
+    - cleanup_directory: /etc/clickhouse-server/users.d
+      expected_files: "{{ _user_configs | map(attribute='file') | map('basename') }}"
+      pattern: "*.yml"
+      restart: true
+    - cleanup_directory: "{{ clickhouse_dictionaries_config_path }}"
+      expected_files: "{{ clickhouse_dictionaries_config_files | map('basename') }}"
+      pattern: "*"
+      restart: true
 
 # format_schemas and top_level_domains by default are created by server process
 # according to `umask` server configuration parameter.
@@ -222,6 +242,19 @@
         mode: "u=rwx,g=rx,o="
       notify: restart-clickhouse
       loop: "{{ clickhouse_format_schema_files }}"
+
+- name: Cleanup stale user files
+  when: clickhouse_setup == "full"
+  include_tasks: ./helpers/cleanup_stale_files.yml
+  with_items:
+    - cleanup_directory: "{{ clickhouse_top_level_domains_path }}"
+      expected_files: "{{ clickhouse_top_level_domains_lists_files | map('basename') }}"
+      pattern: "*"
+      restart: true
+    - cleanup_directory: "{{ clickhouse_format_schema_path }}"
+      expected_files: "{{ clickhouse_format_schema_files | map('basename') }}"
+      pattern: "*"
+      restart: true
 
 - name: Create clickhouse-server additional data directories
   file:
@@ -269,3 +302,10 @@
         group: root
       loop:
         - clickhouse-client/config.xml
+    - name: Cleanup stale format schemas
+      include_tasks: ./helpers/cleanup_stale_files.yml
+      with_items:
+        - cleanup_directory: /etc/clickhouse-client/format_schemas
+          expected_files: "{{ clickhouse_format_schema_files | map('basename') }}"
+          pattern: "*"
+          restart: false

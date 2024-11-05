@@ -1,0 +1,32 @@
+---
+# Sequence of tasks to detect and delete, if allowed, the files not
+# managed by the role anymore
+- name: List files
+  find:
+    paths: "{{ item.cleanup_directory }}"
+    patterns: "{{ item.pattern }}"
+  register: __cleanup_directory_files__
+- name: Check for stale files
+  set_fact:
+    __stale_files__: "{{
+      __cleanup_directory_files__.files | map(attribute='path') | map('basename') |
+      difference(item.expected_files)
+    }}"
+- name: Files found, but cannot be deleted
+  fail:
+    msg: |
+      Following stale files are found in {{ item.cleanup_directory }}:
+      {{ _stale_files | join(', ') }}, but file deletion is not allowed.
+      To delete these files, set `clickhouse_delete_stale_files` variable
+      to `true`.
+  when: __stale_files__ | length != 0 and not clickhouse_delete_stale_files
+  ignore_errors: true
+- name: Delete stale files
+  file:
+    path: "{{ item.cleanup_directory }}/{{ stale }}"
+    state: absent
+  with_items: "{{ __stale_files__ }}"
+  loop_control:
+    loop_var: stale
+  notify: "{{ item.restart | ternary(['restart-clickhouse'], []) }}"
+  when: clickhouse_delete_stale_files

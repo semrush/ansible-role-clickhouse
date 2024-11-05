@@ -4,6 +4,10 @@
 # client - setup only client
 clickhouse_setup: full
 
+# If deletion of stale configuration files (once managed by the role,
+# but deleted from inventory variable later) is allowed
+clickhouse_delete_stale_files: true
+
 # NOTE: It is not recommended to use "latest", you should always pin version!
 # clickhouse_version: ""
 
