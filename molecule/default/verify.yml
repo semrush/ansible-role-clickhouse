@@ -162,6 +162,17 @@
           with_items:
             - "{{ user_defined_user_overrides }}"
 
+        - name: Assert stale configuration files have been deleted
+          include_tasks: ./helpers/assert_config_not_exists.yml
+          with_items:
+            - /etc/clickhouse-server/config.d/00-stale-role-defined-override.yml
+            - /etc/clickhouse-server/config.d/99-stale-user-defined-override.yml
+            - /etc/clickhouse-server/users.d/99-stale-user-configuration.yml
+            - /etc/clickhouse-server/dictionary.d/stale-dictionary.xml
+            - /var/lib/clickhouse/format_schemas/stale.proto
+            - /var/lib/clickhouse/top_level_domains/stale_tld.dat
+            - /etc/clickhouse-client/format_schemas/stale.proto
+
         - name: Assert configuration has been applied correctly
           include_tasks: ./helpers/assert_query_result.yml
           with_items:
