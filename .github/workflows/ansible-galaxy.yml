@@ -1,0 +1,25 @@
+---
+name: Ansible Galaxy
+
+on:
+  push:
+    tags:
+      - '*'
+  # For manual runs
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Publish to Ansible Galaxy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - name: Install dependencies
+        run: pip install ansible
+      - name: Deploy
+        run: ansible-galaxy import semrush ansible-role-clickhouse --token "${{ secrets.GALAXY_API_KEY }}"
