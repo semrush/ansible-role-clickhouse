@@ -163,10 +163,9 @@
       set_fact:
         _user_configs: "{{
           _user_configs | default([]) + ((item is mapping) | ternary(
-            [{'file': item.file, 'no_log': item.no_log | default(False)}],
-            [{'file': item, 'no_log': False}]
-          ))
-        }}"  # noqa: jinja[spacing]
+            [{'file': item.file, 'no_log': item.no_log | default(False), 'no_restart': item.no_restart | default(False)}],
+            [{'file': item, 'no_log': False, 'no_restart': False}]
+          )) }}"  # noqa: jinja[spacing]
       loop: "{{ common_user_configs + clickhouse_user_files | default([]) }}"
     - name: Deploy clickhouse-server users overrides (requires restart)
       template:
@@ -177,7 +176,16 @@
         mode: "u=r,go="
       notify: restart-clickhouse
       no_log: "{{ item.no_log }}"
-      loop: "{{ _user_configs }}"
+      loop: "{{ _user_configs | selectattr('no_restart', 'eq', False) }}"
+    - name: Deploy clickhouse-server users overrides (without restart)
+      template:
+        src: "{{ (item is mapping) | ternary(item.file, item) }}.j2"
+        dest: "/etc/clickhouse-server/users.d/{{ (item is mapping) | ternary(item.file, item) | basename }}"
+        owner: clickhouse
+        group: clickhouse
+        mode: "u=r,go="
+      no_log: "{{ item.no_log }}"
+      loop: "{{ _user_configs | selectattr('no_restart', 'eq', True) }}"
     - name: Deploy dictionaries configuration (requires restart)
       template:
         src: "{{ item }}.j2"
