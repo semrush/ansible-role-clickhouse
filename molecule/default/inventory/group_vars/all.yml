@@ -42,6 +42,9 @@ clickhouse_user_files:
   - users.d/01-first_test_user.yml
   - file: users.d/02-second_test_user.yml
     no_log: true
+  - file: users.d/03-third_test_user.yml
+    no_log: false
+    no_restart: true
 
 clickhouse_configuration_files:
   - config.d/01-merge_tree.yml
