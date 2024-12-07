@@ -180,6 +180,37 @@ $ { echo 00-ansible-role-config; echo 99-override-config; echo 9-override-config
 
 </details>
 
+##### User configuration files
+
+You can specify additional user configuration files using the `clickhouse_user_files` variable. These files can be added without requiring a server restart.
+
+```yaml
+clickhouse_user_files:
+  - file: group_templates/clickhouse/clickhouse-server/users.d/additional_user.yml
+    no_log: true
+    no_restart: true
+```
+Note, there are the following attributes supported:
+- `no_restart` - changes of this configuration file will not restart the clickhouse-server (i.e. due to it is known that it is applied on fly)
+- `no_log` - do not show diff (ansible option), see [Sensitive data in server configuration directives overrides](#sensitive-data-in-server-configuration-directives-overrides) section for more details
+
+<details>
+
+<summary>templates/group_templates/clickhouse/clickhouse-server/users.d/additional_user.yml.j2</summary>
+
+```yaml
+# templates/group_templates/clickhouse/clickhouse-server/users.d/additional_user.yml.j2
+users:
+  additional_user:
+    password: user_password
+    profile: default
+    quota: default
+    networks:
+      ip: "::/0"
+```
+
+</details>
+
 ##### Sensitive data in server configuration directives overrides
 
 In case server or users configuration templates contains sensitive data, e. g. plain passwords,
