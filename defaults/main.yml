@@ -54,6 +54,8 @@ clickhouse_quotas:
 
 # List for additional user-configuration file to override or extend
 # variable based configuration
+# - no_log -- do not log the diff (ansible)
+# - no_restart -- assume that clickhouse-server restart is not required
 clickhouse_user_files: []
 
 #

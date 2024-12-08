@@ -9,7 +9,7 @@
 
       # All configured users created
       - query: select count() from system.users
-        result: 4
+        result: 5
 
       # Profile applied to user
       - query: >

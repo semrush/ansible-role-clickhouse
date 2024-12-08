@@ -58,5 +58,9 @@
     clickhouse_online_configuration_files:
       - group_templates/clickhouse/clickhouse-server/config.d/remote_servers.yml
       - group_templates/clickhouse/clickhouse-server/config.d/zookeeper.yml
+    clickhouse_user_files:
+      - file: group_templates/clickhouse/clickhouse-server/users.d/additional_users.yml
+        no_log: true
+        no_restart: true
   roles:
     - clickhouse
