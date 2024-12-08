@@ -43,6 +43,7 @@ clickhouse_user_files:
   - file: users.d/02-second_test_user.yml
     no_log: true
   - file: users.d/03-third_test_user.yml
+    # TODO: properly test that attributes are supported
     no_log: false
     no_restart: true
 
