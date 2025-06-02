@@ -9,8 +9,7 @@ platforms:
     image: "${DISTRO_NAME:-debian}:${DISTRO_VER:-12}"
     dockerfile: ../resources/Dockerfile.j2
     cgroupns_mode: host
-    sysctls:
-      net.ipv6.conf.all.disable_ipv6: 0
+    network_mode: host
     capabilities:
       - 'CAP_NET_ADMIN'
       - 'CAP_IPC_LOCK'
