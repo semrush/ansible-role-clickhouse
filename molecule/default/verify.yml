@@ -213,7 +213,7 @@
         - name: Assert no unexpected messages found in .err.log
           command: >
             grep -v \
-              -e 'Access(local_directory): File /var/lib/clickhouse/access/users.list doesn\'t exist' \
+              -e "Access(local_directory): File /var/lib/clickhouse/access/users.list doesn't exist" \
               -e 'Access(local_directory): Recovering lists in directory /var/lib/clickhouse/access/' \
               -e 'Available memory at server startup is too low' \
               -e 'Delay accounting is not enabled' \

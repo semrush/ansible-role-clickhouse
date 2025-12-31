@@ -66,7 +66,7 @@
             ((item is not mapping) and not item | basename | regex_search("^00-"))
           )
         msg: "Configuration file {{ item }} contains '00-' prefix. Those are reserved for role builtin"
-      loop: "{{ clickhouse_online_configuration_files | default([]) + clickhouse_configuration_files }}"
+      loop: "{{ (clickhouse_online_configuration_files | default([])) + (clickhouse_configuration_files | default([])) }}"
     - name: Create clickhouse-server root configuration directory
       file:
         dest: /etc/clickhouse-server
@@ -131,11 +131,15 @@
           - file: clickhouse-server/config.d/00-memory.yml
             no_restart: true
       set_fact:
-        _server_configs: "{{ _server_configs | default([]) + ((item is mapping) | ternary(
-          [{'file': item.file, 'no_log': item.no_log | default(False), 'no_restart': item.no_restart | default(False)}],
-          [{'file': item, 'no_log': False, 'no_restart': False}]
-        )) }}"  # noqa: jinja[spacing]
-      loop: "{{ common_server_configs + clickhouse_configuration_files + _config_no_restart | default([]) }}"
+        _server_configs: "{{
+          (_server_configs | default([])) +
+          [{
+            'file': item.file | default(item),
+            'no_log': item.no_log | default(False),
+            'no_restart': item.no_restart | default(False)
+          }]
+        }}"  # noqa: jinja[spacing]
+      loop: "{{ common_server_configs + (clickhouse_configuration_files | default([])) + (_config_no_restart | default([])) }}"
     - name: Deploy clickhouse-server config overrides (requires restart)
       template:
         src: "{{ item.file }}.j2"
@@ -162,11 +166,14 @@
           - clickhouse-server/users.d/00-overrides.yml
       set_fact:
         _user_configs: "{{
-          _user_configs | default([]) + ((item is mapping) | ternary(
-            [{'file': item.file, 'no_log': item.no_log | default(False), 'no_restart': item.no_restart | default(False)}],
-            [{'file': item, 'no_log': False, 'no_restart': False}]
-          )) }}"  # noqa: jinja[spacing]
-      loop: "{{ common_user_configs + clickhouse_user_files | default([]) }}"
+          (_user_configs | default([])) +
+          [{
+            'file': item.file | default(item),
+            'no_log': item.no_log | default(False),
+            'no_restart': item.no_restart | default(False)
+          }]
+        }}"  # noqa: jinja[spacing]
+      loop: "{{ common_user_configs + (clickhouse_user_files | default([])) }}"
     - name: Deploy clickhouse-server users overrides (requires restart)
       template:
         src: "{{ (item is mapping) | ternary(item.file, item) }}.j2"

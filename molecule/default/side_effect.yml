@@ -12,8 +12,14 @@
         - /etc/clickhouse-server/config.d/00-stale-role-defined-override.yml
         - /etc/clickhouse-server/config.d/99-stale-user-defined-override.yml
         - /etc/clickhouse-server/users.d/99-stale-user-configuration.yml
-        - /etc/clickhouse-server/dictionary.d/stale-dictionary.xml
         - /var/lib/clickhouse/format_schemas/stale.proto
         - /var/lib/clickhouse/top_level_domains/stale_tld.dat
         - /etc/clickhouse-client/format_schemas/stale.proto
+      when: clickhouse_setup == "full"
+
+    - name: Emulating stale dictionary file
+      copy:
+        dest: /etc/clickhouse-server/dictionary.d/stale-dictionary.xml
+        content: |
+          <clickhouse/>
       when: clickhouse_setup == "full"
