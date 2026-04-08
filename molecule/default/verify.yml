@@ -221,6 +221,7 @@
               -e 'Linux is not using a fast clock source' \
               -e 'Linux threads max count is too low' \
               -e 'Linux transparent hugepages are set to "always"' \
+              -e 'MergeMutateSelectedEntry was not finalized' \
               /var/log/clickhouse-server/clickhouse-server.err.log
           register: grep_result
           failed_when: grep_result.rc != 1
