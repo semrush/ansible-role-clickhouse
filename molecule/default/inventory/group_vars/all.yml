@@ -55,6 +55,7 @@ clickhouse_configuration_files:
   - file: config.d/02-macros.yml
     no_log: false
     no_restart: true
+  - config.d/99-listen_host.yml
 
 clickhouse_http_handlers_files:
   - config.d/http_handlers/test_handler.yml
