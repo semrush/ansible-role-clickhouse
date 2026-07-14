@@ -41,6 +41,8 @@ jobs:
     name: Molecule
     runs-on: ubuntu-latest
     needs: lint
+    env:
+      ANSIBLE_FORCE_COLOR: "true"
     strategy:
       matrix:
         distro:
