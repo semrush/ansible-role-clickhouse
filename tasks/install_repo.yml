@@ -7,7 +7,13 @@
 # Due to this fact we don't need to check if ClickHouse service state,
 # therefore handler notifications are not required at this step.
 
-- name: ClickHouse Apt repository
+- name: Check apt-key availability
+  stat:
+    path: /usr/bin/apt-key
+  register: clickhouse_apt_key_utility
+
+- name: ClickHouse Apt repository with apt-key
+  when: clickhouse_apt_key_utility.stat.exists
   block:
     - name: Apt key from URL
       get_url:
@@ -24,6 +30,33 @@
       apt_repository:
         filename: clickhouse__ansible
         repo: "{{ clickhouse_apt_repo }}"
+
+- name: ClickHouse Apt repository with keyring
+  when: not clickhouse_apt_key_utility.stat.exists
+  block:
+    - name: Apt key from URL
+      get_url:
+        url: "{{ clickhouse_apt_repo_key_url | default('', true) or clickhouse_apt_repo_builtin_key_url }}"
+        dest: /usr/share/keyrings/clickhouse__ansible.asc
+        mode: "0644"
+
+    - name: Remove legacy Apt key file
+      file:
+        path: /etc/apt/trusted.gpg.d/clickhouse__ansible.asc
+        state: absent
+
+    - name: Validate Apt repository format
+      assert:
+        that:
+          - clickhouse_apt_repo.split() | length == 4
+        fail_msg: "clickhouse_apt_repo must use format: deb URI suite component"
+
+    - name: Apt repository signed-by keyring
+      apt_repository:
+        filename: clickhouse__ansible
+        repo: >-
+          {% set repo_parts = clickhouse_apt_repo.split() %}
+          {{ repo_parts[0] }} [signed-by=/usr/share/keyrings/clickhouse__ansible.asc] {{ repo_parts[1:] | join(' ') }}
 
 - name: Update Debian Repositories
   apt:

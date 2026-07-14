@@ -12,12 +12,17 @@ clickhouse_delete_stale_files: true
 # clickhouse_version: ""
 
 # Apt repository configuration variables
-# Apt key may be loaded either from keyserver, or directly from URL
-# In case URL is specified, it has higher priority over loading from keyserver.
 clickhouse_apt_repo: deb https://packages.clickhouse.com/deb stable main
+
+# Apt key configuration.
+# When apt-key is available, a custom URL has higher priority over keyserver.
+# When apt-key is not available, a custom URL or the builtin key URL is used
+# with signed-by keyring.
 clickhouse_apt_repo_key: 8919F6BD2B48D754
 clickhouse_apt_keyserver: keyserver.ubuntu.com
+
 clickhouse_apt_repo_key_url: ""
+clickhouse_apt_repo_builtin_key_url: https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key
 
 clickhouse_packages:
   - clickhouse-server
