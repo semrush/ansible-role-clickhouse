@@ -41,11 +41,15 @@ jobs:
     name: Molecule
     runs-on: ubuntu-latest
     needs: lint
+    env:
+      ANSIBLE_FORCE_COLOR: "true"
     strategy:
       matrix:
         distro:
           - name: debian
             version: "12"
+          - name: debian
+            version: "13"
           - name: ubuntu
             version: "22.04"
           - name: ubuntu
@@ -56,6 +60,8 @@ jobs:
           - name: ubuntu
             version: "24.04"
             clickhouse_version: "24.9.2.42"
+          - name: ubuntu
+            version: "26.04"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
