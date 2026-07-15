@@ -108,10 +108,10 @@ remote_servers:
         - node:
               - host: 127.1
                 port: 9000
-                password: {{ clickhouse_users_default }}
+                password: {{ clickhouse_users['default']['password'] }}
               - host: 127.2
                 port: 9000
-                password: {{ clickhouse_users_default }}
+                password: {{ clickhouse_users['default']['password'] }}
     dev_cluster_secure:
         - secret: STORE_THIS_IN_ANSIBLE_VAULT_VARIABLE
           node:
