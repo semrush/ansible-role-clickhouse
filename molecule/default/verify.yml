@@ -210,6 +210,16 @@
           command: >
             clickhouse-client --query "select 1 key, 'foo' value format Protobuf settings format_schema='record:Record'"
 
+        - name: Assert readonly user can connect with plain password
+          command: >
+            clickhouse-client --user readonly --password readonlypass --query "select 1"
+
+        - name: Assert readonly user can connect with env password
+          command: >
+            clickhouse-client --user readonly --query "select 1"
+          environment:
+            CLICKHOUSE_PASSWORD: readonlypass
+
         - name: Assert no unexpected messages found in .err.log
           command: >
             grep -v \
