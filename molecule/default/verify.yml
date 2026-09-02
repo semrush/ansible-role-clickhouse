@@ -50,6 +50,7 @@
             and message not like 'Linux transparent hugepages are set to \"always\"%'
             and message not like 'Available memory at server startup is too low%'
             and message not like 'Delay accounting is not enabled%'
+            and message not like 'The Linux \'restartable sequences\' (rseq) feature is not enabled%'
           limit 1
         result: ""
 
@@ -232,6 +233,7 @@
               -e 'Linux threads max count is too low' \
               -e 'Linux transparent hugepages are set to "always"' \
               -e 'MergeMutateSelectedEntry was not finalized' \
+              -e 'The Linux '\''restartable sequences'\'' (rseq) feature is not enabled' \
               /var/log/clickhouse-server/clickhouse-server.err.log
           register: grep_result
           failed_when: grep_result.rc != 1
