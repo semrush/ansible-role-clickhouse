@@ -2,7 +2,7 @@
 
 ### Prerequisites
 
-- ClickHouse v23.5 (*note: yes, it could be relaxed, but I just don't think that it worth it*)
+- ClickHouse v23.5 (*note: yes, it could be relaxed, but I just don't think that it is worth it*)
 - Ansible 2.11+
 
 #### Version requirement changelog
@@ -27,7 +27,7 @@ roles:
   version: 1.0.0
 ```
 
-It is also recommended to add role to `.gitignore` (or install it outside of
+It is also recommended to add the role to `.gitignore` (or install it outside of
 the repository), this will allow to keep things clean, i.e. you will not
 randomly edit the roles file and later `ansible-galaxy` may overwrite them
 (though there is one exception to this rule -
@@ -77,7 +77,7 @@ See [this page](Documentation/Advanced_Configuration.md).
 - Using YAML for configurations, and even though the syntax somewhere is
   tricky, it shows itself good.
 
-  For instance `jinja2` natively render `dict` in `YAML`, so we don't need to
+  For instance `jinja2` natively renders `dict` in `YAML`, so we don't need to
   add additional loops over keys/values in the templates.
 
 - Provide sane defaults:
@@ -88,7 +88,7 @@ See [this page](Documentation/Advanced_Configuration.md).
 
   - TTL for `*_log` tables
 
-  - Enabled prometheus exported by default
+  - Enabled prometheus exporter by default
 
   - Has extra metrics via `http_handlers`
 
@@ -114,4 +114,4 @@ You can create an issue [here](https://github.com/semrush/ansible-role-clickhous
 
 ### Adopters
 
-*Please, add yourself to the adopters list (just send us merge request)!*
+*Please, add yourself to the adopters list (just send us a merge request)!*

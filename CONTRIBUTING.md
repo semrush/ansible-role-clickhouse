@@ -1,6 +1,6 @@
 ### Contributing
 
-In a general we are following fork model, like usual contributions on github:
+In general we are following fork model, like usual contributions on GitHub:
 
 - fork this repository
 - create topic branch
