@@ -11,13 +11,13 @@ role (some default overrides), started to have prefix `00-`, this is required
 to load them first, so that anything else will override them. But there is no
 task to remove old files, so it is your responsibility to do this.
 
-Here is an example onelinear for this:
+Here is an example one-liner for this:
 
 ```sh
 ls -1d /etc/clickhouse-server/config.d/* | grep /00- | sed 's/00-//g' | xargs -r rm
 ```
 
-*Note: that strictly speaking nothing will be broken even if you will not
+*Note: that strictly speaking nothing will be broken even if you do not
 remove them, but there will be duplicated configuration files, and overrides
 may not work as described in the documentation*
 
